@@ -1,7 +1,7 @@
-from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager, config_list_from_json
 import os
 import json
 import base64
+import autogen
 import testbed_utils
 
 # NOTE:
@@ -36,20 +36,17 @@ def run_tests(candidate):
 
 
 # Ok, now get autogen to solve it.
-config_list = config_list_from_json(
+config_list = autogen.config_list_from_json(
     "OAI_CONFIG_LIST",
     filter_dict={"model": ["__MODEL__"]},
 )
 
-assistant = AssistantAgent(
+assistant = autogen.AssistantAgent(
     "coder",
     is_termination_msg=lambda x: x.get("content", "").rstrip().find("TERMINATE") >= 0,
-    llm_config={
-        "timeout": 180,
-        "config_list": config_list,
-    },
+    llm_config=testbed_utils.default_llm_config(config_list, timeout=180),
 )
-user_proxy = UserProxyAgent(
+user_proxy = autogen.UserProxyAgent(
     "user_proxy",
     human_input_mode="NEVER",
     system_message="A human who can run code at a terminal and report back the results.",
@@ -61,26 +58,20 @@ user_proxy = UserProxyAgent(
     max_consecutive_auto_reply=10,
 )
 
-third_agent = AssistantAgent(
+third_agent = autogen.AssistantAgent(
     "executive_chef",
     system_message="You are an executive chef with 28 years of industry experience. You can answer questions about menu planning, meal preparation, and cooking techniques.",
     is_termination_msg=lambda x: x.get("content", "").rstrip().find("TERMINATE") >= 0,
-    llm_config={
-        "timeout": 180,  # Remove for autogen version >= 0.2, and OpenAI version >= 1.0
-        "config_list": config_list,
-    },
+    llm_config=testbed_utils.default_llm_config(config_list, timeout=180),
 )
 
 
-groupchat = GroupChat(agents=[user_proxy, assistant, third_agent], messages=[], max_round=12)
+groupchat = autogen.GroupChat(agents=[user_proxy, assistant, third_agent], messages=[], max_round=12)
 
-manager = GroupChatManager(
+manager = autogen.GroupChatManager(
     groupchat=groupchat,
     is_termination_msg=lambda x: x.get("content", "").rstrip().find("TERMINATE") >= 0,
-    llm_config={
-        "timeout": 180,  # Remove for autogen version >= 0.2, and OpenAI version >= 1.0
-        "config_list": config_list,
-    },
+    llm_config=testbed_utils.default_llm_config(config_list, timeout=180),
 )
 
 user_proxy.initiate_chat(

@@ -35,7 +35,12 @@ def collate(results_dir):
                     content = fh.read()
                     if "ALL TESTS PASSED !#!#" in content:
                         results.append(
-                            str(content.count("assistant (to user_proxy):"))
+                            str(
+                                content.count("assistant (to user_proxy):")
+                                + content.count("coder (to chat_manager):")
+                                + content.count("guardrails_agent (to chat_manager):")
+                                + content.count("executive_chef (to chat_manager):")
+                            )
                         )  # The number of assistant replies (which is also equal to the number of GPT calls in this case)
                     else:
                         results.append("-1")
